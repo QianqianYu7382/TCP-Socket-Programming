@@ -1,4 +1,3 @@
-// ringmaster.hpp
 #ifndef RINGMASTER_HPP
 #define RINGMASTER_HPP
 
@@ -7,32 +6,24 @@
 #include <string>
 #include <sstream>
 #include <cstdlib> // For atoi
+#include <cstring> // For strerror
 #include <netinet/in.h> // For sockaddr_in
 #include <sys/socket.h> // For socket functions
 #include <unistd.h> // For close
+#include <errno.h> // For errno
 using namespace std;
-
-struct potato {
-    int num_hops;
-    std::vector<int> id_record;
-};
-
 class ringmaster {
 public:
-    ringmaster(int port, int num_players, int num_hops) 
-    : port(port), num_players(num_players), num_hops(num_hops) {}
-    
-    void print_background()  {
-        std::cout << "Potato Ringmaster\n";
-        std::cout << "Players = " << num_players << "\n";
-        std::cout << "Hops = " << num_hops << std::endl;
-    }
+    ringmaster(int port, int num_players, int num_hops);s
+    void print_background();
+    void setup_server();
 
-    
 private:
     int port;
     int num_players;
     int num_hops;
-};
+    vector<int> client_sockets;
+    void handle_client(int client_sock);
+}
 
 #endif // RINGMASTER_HPP
