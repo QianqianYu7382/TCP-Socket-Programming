@@ -14,16 +14,22 @@
 using namespace std;
 class ringmaster {
 public:
-    ringmaster(int port, int num_players, int num_hops);s
+    ringmaster(int port, int num_players, int num_hops);
     void print_background();
     void setup_server();
+    void get_info(vector<int> client_sockets);
 
 private:
     int port;
     int num_players;
     int num_hops;
     vector<int> client_sockets;
-    void handle_client(int client_sock);
-}
+    vector<std:: string> client_ips;
+    vector<int> client_ports;
+
+    vector<std:: string> server_ips;
+    vector<int> server_ports;
+
+};
 
 #endif // RINGMASTER_HPP

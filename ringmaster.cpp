@@ -1,4 +1,11 @@
 #include "ringmaster.hpp"
+#include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <netinet/in.h>  
+#include <arpa/inet.h> 
 
 using namespace std;
 
@@ -11,61 +18,97 @@ void ringmaster::print_background() {
     cout << "Hops = " << num_hops << endl;
 }
 
+
 void ringmaster::setup_server() {
+    int status;
     int server_fd;
-    struct sockaddr_in address;
-    int opt = 1;
-    int addrlen = sizeof(address);
+    struct addrinfo host_info, *host_info_list;
+    const char *port_str = std::to_string(port).c_str();
 
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
+    memset(&host_info, 0, sizeof(host_info));
+    host_info.ai_family = AF_UNSPEC; 
+    host_info.ai_socktype = SOCK_STREAM;
+    host_info.ai_flags = AI_PASSIVE;
+
+//hostname
+    status = getaddrinfo(NULL, port_str, &host_info, &host_info_list);
+    if (status != 0) {
+        std::cerr << "Error: cannot get addhost_info_lists info for host (" << port_str << ")" << std::endl;
+        return;
     }
 
-    //maybe
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
+    server_fd = socket(host_info_list->ai_family, host_info_list->ai_socktype, host_info_list->ai_protocol);
+    if (server_fd == -1) {
+        std::cerr << "Error: cannot create socket (" << port_str << ")" << std::endl;
+        return;
     }
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(port);
-
-    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address))<0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
+    int yes = 1;
+    status = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+    if (status == -1) {
+        perror("Error: cannot bind socket");
+        // 考虑更优雅的错误处理方式
     }
 
-    if (listen(server_fd, 10) < 0) { // Max 3 pending connections
-        perror("listen");
-        exit(EXIT_FAILURE);
+    status = bind(server_fd, host_info_list->ai_addr, host_info_list->ai_addrlen);
+    if (status == -1) {
+        std::cerr << "Error: cannot bind socket (" << port_str << ")" << std::endl;
+        return;
     }
 
-while (client_sockets.size() < num_players) {
-    int new_socket;
-    sockaddr_in address;
-    socklen_t addrlen = sizeof(address);
-    if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
-        perror("accept");
-        exit(EXIT_FAILURE);
+    status = listen(server_fd, num_players);
+    if (status == -1) {
+        std::cerr << "Error: cannot listen on socket (" << port_str << ")" << std::endl;
+        return;
     }
-    client_sockets.push_back(new_socket);
-    cout << "Player connected," << client_sockets.size() << " socket fd: " << new_socket << endl;
+
+    std::cout << "Waiting for connection on port " << port << std::endl;
+
+    // 只接受num_players指定数量的客户端连接
+    while (client_sockets.size() < static_cast<unsigned int>(num_players)) {
+        struct sockaddr_storage their_addr;
+        socklen_t addr_size = sizeof(their_addr);
+        int new_fd = accept(server_fd, (struct sockaddr *)&their_addr, &addr_size);
+        if (new_fd != -1) {
+            client_sockets.push_back(new_fd);
+            std::cout << "Player " << client_sockets.size() <<" ready to connect!"<< std::endl;
+        } 
+    }
+
+
+
+    if (num_hops == 0) {
+        for (int client_fd : client_sockets) {
+            close(client_fd); // 关闭客户端套接字
+        }
+        close(server_fd);
+        freeaddrinfo(host_info_list);
+    }
+}
+
+void ringmaster::get_info(vector<int> client_sockets) {
+    for (int new_fd : client_sockets) {
+        // 获取客户端的地址信息
+        struct sockaddr_in client_addr;
+        socklen_t client_addr_size = sizeof(client_addr);
+        getpeername(new_fd, (struct sockaddr *)&client_addr, &client_addr_size);
+        std::string client_ip = inet_ntoa(client_addr.sin_addr);
+        int client_port = ntohs(client_addr.sin_port);
+        client_ips.push_back(client_ip);
+        client_ports.push_back(client_port);
+
+        // 获取服务器的地址信息
+        struct sockaddr_in server_addr;
+        socklen_t server_addr_size = sizeof(server_addr);
+        getsockname(new_fd, (struct sockaddr *)&server_addr, &server_addr_size);
+        std::string server_ip = inet_ntoa(server_addr.sin_addr);
+        int server_port = ntohs(server_addr.sin_port);
+        server_ips.push_back(server_ip);
+        server_ports.push_back(server_port);
+    }
 
 }
 
-for (int sock : client_sockets) {
-    close(sock);
-}
-    close(server_fd);
-}
-
-void ringmaster::handle_client(int /* client_sock */) {
-    // This is where you would communicate with the client
-    // For now, just a placeholder showing the connection is established
-    cout << "Client connected successfully" << endl;
-}
 
 int main(int argc, char* argv[]) {
     if (argc != 4) {
@@ -82,9 +125,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    ringmaster ring(port, num_players, num_hops);
-    ring.print_background();
-    ring.setup_server();
+    ringmaster ringmaster(port, num_players, num_hops);
+    ringmaster.print_background();
+    ringmaster.setup_server();
 
     return 0;
 }

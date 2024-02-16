@@ -10,17 +10,18 @@
 #include <netinet/in.h> // For sockaddr_in
 #include <sys/socket.h> // For socket functions
 #include <unistd.h> // For close
+
 using namespace std;
 
 class player {
 public:
-    player(string machine_name, int port_num) 
-    : machine_name(machine_name), port_num(port_num) {}
-
+    player(std::string machine_name, int port_num);
+    void setup_client();
 
 private:
-    string machine_name;
+    std::string machine_name;
     int port_num;
+    int player_id;
 };
 
 #endif // PLAYER_HPP
