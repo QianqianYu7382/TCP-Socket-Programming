@@ -18,6 +18,7 @@ public:
     void print_background();
     void setup_server();
     void get_info(vector<int> client_sockets);
+    void send_info();
 
 private:
     int port;

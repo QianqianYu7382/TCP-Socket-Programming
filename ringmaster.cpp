@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <netinet/in.h>  
 #include <arpa/inet.h> 
+#include <sstream>
+#include <string>
 
 using namespace std;
 
@@ -75,6 +77,8 @@ void ringmaster::setup_server() {
         } 
     }
 
+    get_info(client_sockets);
+    send_info();
 
 
     if (num_hops == 0) {
@@ -83,6 +87,36 @@ void ringmaster::setup_server() {
         }
         close(server_fd);
         freeaddrinfo(host_info_list);
+    }
+}
+
+void ringmaster::send_info() {
+    for (size_t i = 0; i < client_sockets.size(); ++i) {
+        int palyer_id = i;
+        size_t left_index = (i + client_sockets.size() - 1) % client_sockets.size();
+        size_t right_index = (i + 1) % client_sockets.size();
+
+        std::string left_ip = client_ips[left_index];
+        std::string right_ip = client_ips[right_index];
+
+        int left_port = client_ports[left_index];
+        int right_port = client_ports[right_index];
+
+        std::string left_port_str = std::to_string(left_port);
+        std::string right_port_str = std::to_string(right_port);
+        std::string player_id_str = std::to_string(palyer_id);
+
+        std::string message = "Player_ID: " + player_id_str +
+                      " Left_IP: " + left_ip +
+                      " Right_IP: " + right_ip +
+                      " Left_Port: " + left_port_str +
+                      " Right_Port: " + right_port_str + "\n";
+
+        ssize_t bytes_sent = send(client_sockets[i], message.c_str(), message.size(), 0);
+        if (bytes_sent == -1) {
+            perror("send");
+            // Handle error
+        }
     }
 }
 
