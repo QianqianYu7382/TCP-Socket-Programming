@@ -1,6 +1,7 @@
 #include "player.hpp"
 #include "function.hpp"
 #include <iostream>
+#include "potato.hpp"
 #include <cstring>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -8,16 +9,20 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
 
 using namespace std;
 
 player::player(std::string machine_name, int port_num) 
     : machine_name(machine_name), port_num(port_num) {}
 
-void player::setup_client() {
+void player::setup_client(Potato potato) {
     
     int socket_fd = create_client(machine_name, port_num);
-    int server_fd = create_server(0);
+    server_fd = create_server(0);
     local_port = get_port(server_fd);
     std::string local_port_str = std::to_string(local_port);
     cout<<"local port number : "<<local_port_str<<endl;
@@ -25,15 +30,91 @@ void player::setup_client() {
     send(socket_fd, message.c_str(), message.size(), 0);
     std:: string message1 = receive_info(socket_fd);
     get_neighbor_info(message1);
-
+    connect_neighbor(socket_fd);
     
+
 
     end_game(socket_fd);
     
 }
 
+void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato potato) {
+    fd_set readfds;
+    int maxFD;
+    maxFD = ringMasterFD > leftPlayerFD ? ringMasterFD : leftPlayerFD;
+    maxFD = maxFD > rightPlayerFD ? maxFD : rightPlayerFD;
+    while (true) {
+        FD_ZERO(&readfds);
+        FD_SET(ringMasterFD, &readfds);
+        FD_SET(leftPlayerFD, &readfds);
+        FD_SET(rightPlayerFD, &readfds);
+
+        int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL);
+
+        if ((activity < 0) && (errno != EINTR)) {
+            std::cout << "select error" << std::endl;
+        }
+
+        if (FD_ISSET(ringMasterFD, &readfds)) {
+            receive_potato(ringMasterFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+        }
+
+        if (FD_ISSET(leftPlayerFD, &readfds)) {
+            receive_potato(leftPlayerFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+        }
+
+        if (FD_ISSET(rightPlayerFD, &readfds)) {
+            receive_potato(rightPlayerFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+        }
+
+        // 处理数据...
+    }
+
+}
+
+//fd is original send_fd
+void player::receive_potato(int fd, int left, int right, int master, Potato& potato) {
+    ssize_t bytesReceived = recv(fd, &potato, sizeof(Potato), 0);
+    if (bytesReceived == sizeof(Potato)) {
+        std::cout << "Potato received with hops: " << potato.hops << ", idx: " << potato.idx << std::endl;
+        if (potato.hops > 0) {
+            potato.hops--; 
+            potato.record[potato.idx] = player_id; 
+            potato.idx++;
+            srand((unsigned int)time(NULL)+player_id);
+            int id = rand() % 2;
+            int send_fd = 0;
+            if (id == 0){
+                send_fd = left;
+                cout<<"send to left"<<endl;
+            } 
+            
+            if (id == 1) {
+                send_fd = right;
+                cout<<"send to right"<<endl;
+            } 
+            ssize_t bytes_sent = send(send_fd, &potato, sizeof(potato), 0);
+
+        }
+        //give master
+        if (potato.hops == 0) {
+            send(master, &potato, sizeof(potato), 0);
+            cout<<"I'am it!"<<endl;
+        }
+        std::cout << "Potato modified to hops: " << potato.hops << std::endl;
+    } else {
+        std::cerr << "Failed to receive potato or connection closed." << std::endl;
+    }
+}
+
 void player::connect_neighbor(int socket_fd) {
+    //left is server
     int socket_client_fd_left = create_client(neighbor_ip[0], neighbor_port[0]);
+    //accept right client
+    struct sockaddr_storage their_addr;
+    socklen_t addr_size = sizeof(their_addr);
+    int new_fd = accept(server_fd, (struct sockaddr *)&their_addr, &addr_size);
+    cout<<"Connect neighbor success!"<<endl;
 
 }
 
@@ -61,6 +142,7 @@ void player::get_neighbor_info(string message) {
     neighbor_port.push_back(right_port);
     neighbor_ip.push_back(left_ip);
     neighbor_ip.push_back(right_ip);
+    cout<<"Player "<<player_id_str<<" is is ready to play";
 }
 
 
@@ -97,9 +179,10 @@ int main(int argc, char* argv[]) {
 
     std::string machine_name = argv[1];
     int port_num = atoi(argv[2]);
-
+    int num_hops = atoi(argv[3]);
+    Potato potato;
     player player(machine_name, port_num);
-    player.setup_client();
+    player.setup_client(potato);
 
 
 

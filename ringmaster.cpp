@@ -1,5 +1,6 @@
 #include "ringmaster.hpp"
 #include "function.hpp"
+#include "potato.hpp"
 #include <iostream>
 #include <cstring>
 #include <sys/socket.h>
@@ -22,7 +23,7 @@ void ringmaster::print_background() {
 }
 
 
-void ringmaster::setup_server() {
+void ringmaster::setup_server(Potato potato) {
     int server_fd = create_server(port);
 
     std::cout << "Waiting for connection on port " << port << std::endl;
@@ -44,6 +45,10 @@ void ringmaster::setup_server() {
     get_info(client_sockets);
     send_info();
 
+    srand((unsigned int)time(NULL)+player_id);
+    int first_id = rand() % num_players;
+    ssize_t bytes_sent = send(client_sockets[first_id], &potato, sizeof(potato), 0);
+    cout<<"the first potato send to "<<first_id<<endl;
 
     if (num_hops == 0) {
         for (int client_fd : client_sockets) {
@@ -119,6 +124,9 @@ int main(int argc, char* argv[]) {
     int port = atoi(argv[1]);
     int num_players = atoi(argv[2]);
     int num_hops = atoi(argv[3]);
+    Potato potato;
+    potato.hops = num_hops;
+    potato.idx = 0;
 
     if (num_hops < 0 || num_players <= 0) {
         cerr << "Error: Invalid number of players or hops.\n";
@@ -127,7 +135,7 @@ int main(int argc, char* argv[]) {
 
     ringmaster ringmaster(port, num_players, num_hops);
     ringmaster.print_background();
-    ringmaster.setup_server();
+    ringmaster.setup_server(potato);
 
     return 0;
 }
