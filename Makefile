@@ -1,30 +1,32 @@
-# Compiler and flags
+
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++11
 
-# Name of the executable
-TARGET = ringmaster
 
-# Source files
-SOURCES = ringmaster.cpp
+CXXFLAGS = -Wall -g
 
-# Object files
-OBJECTS = $(SOURCES:.cpp=.o)
+PLAYER_TARGET = player
+RINGMASTER_TARGET = ringmaster
 
-# Default target
-all: $(TARGET)
 
-# Linking the executable
-$(TARGET): $(OBJECTS)
-	$(CXX) $(OBJECTS) -o $@
+all: $(PLAYER_TARGET) $(RINGMASTER_TARGET)
 
-# Compiling source files to object files
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Cleaning up
+$(PLAYER_TARGET): player.o function.o
+	$(CXX) $(CXXFLAGS) -o $(PLAYER_TARGET) player.o function.o
+
+
+$(RINGMASTER_TARGET): ringmaster.o function.o
+	$(CXX) $(CXXFLAGS) -o $(RINGMASTER_TARGET) ringmaster.o function.o
+
+function.o: function.cpp function.hpp
+	$(CXX) $(CXXFLAGS) -c function.cpp
+
+player.o: player.cpp
+	$(CXX) $(CXXFLAGS) -c player.cpp
+
+
+ringmaster.o: ringmaster.cpp ringmaster.hpp
+	$(CXX) $(CXXFLAGS) -c ringmaster.cpp
+
 clean:
-	rm -f $(TARGET) $(OBJECTS)
-
-# Phony targets
-.PHONY: all clean
+	rm -f $(PLAYER_TARGET) $(RINGMASTER_TARGET) *.o
