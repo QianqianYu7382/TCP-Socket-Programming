@@ -1,6 +1,6 @@
 #include "ringmaster.hpp"
 #include "function.hpp"
-#include "potato.hpp"
+// #include "potato.hpp"
 #include <iostream>
 #include <cstring>
 #include <sys/socket.h>
@@ -45,7 +45,7 @@ void ringmaster::setup_server(Potato potato) {
     get_info(client_sockets);
     send_info();
 
-    srand((unsigned int)time(NULL)+player_id);
+    srand((unsigned int)time(NULL)+1);
     int first_id = rand() % num_players;
     ssize_t bytes_sent = send(client_sockets[first_id], &potato, sizeof(potato), 0);
     cout<<"the first potato send to "<<first_id<<endl;

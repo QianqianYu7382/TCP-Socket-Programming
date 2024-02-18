@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include "potato.hpp"
 #include <sstream>
 #include <cstdlib> // For atoi
 #include <cstring> // For strerror
