@@ -105,8 +105,6 @@ void player::receive_potato(int fd, int left, int right, int master, Potato& pot
             cout<<"I'am it!"<<endl;
         }
         std::cout << "Potato modified to hops: " << potato.hops << std::endl;
-    } else {
-        std::cerr << "Failed to receive potato or connection closed." << std::endl;
     }
 }
 
