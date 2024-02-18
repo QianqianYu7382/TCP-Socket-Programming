@@ -36,6 +36,9 @@ void player::setup_client(Potato potato) {
 
     std:: string message1 = receive_info(socket_fd);
     get_neighbor_info(message1);
+
+    recv(socket_fd, &potato, sizeof(potato),0);
+    cout<<"potato's hops: "<< potato.hops<<endl;
     
     (socket_fd);
     int ringMasterFD = socket_fd;

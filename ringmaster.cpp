@@ -54,7 +54,7 @@ void ringmaster::setup_server(Potato potato) {
 
     srand((unsigned int)time(NULL)+1);
     int first_id = rand() % num_players;
-    first_id = 1;
+    first_id = 0;
     ssize_t bytes_sent = send(client_sockets[first_id], &potato, sizeof(potato), 0);
     cout<<"the first potato send to "<<first_id<<endl;
 
@@ -69,6 +69,8 @@ void ringmaster::setup_server(Potato potato) {
 
 
 void ringmaster::send_info() {
+    Potato test_p;
+    test_p.hops = 12;
     for (size_t i = 0; i < client_sockets.size(); ++i) {
         int palyer_id = i;
         size_t left_index = (i + client_sockets.size() - 1) % client_sockets.size();
@@ -91,6 +93,7 @@ void ringmaster::send_info() {
                       " Right_Port: " + right_port_str + "\n";
 
         ssize_t bytes_sent = send(client_sockets[i], message.c_str(), message.size(), 0);
+        send(client_sockets[i], &test_p, sizeof(test_p), 0);
         if (bytes_sent == -1) {
             perror("send");
             // Handle error
