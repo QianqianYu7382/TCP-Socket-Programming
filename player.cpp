@@ -53,13 +53,9 @@ void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato
 
         while (true) {
             FD_ZERO(&readfds);
-            int maxFD = 0;
-            for (int fd : fds) {
-                FD_SET(fd, &readfds);
-                maxFD = std::max(maxFD, fd);
-            }
+            // int maxFD = 1024;
 
-            int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL);
+            int activity = select(1024, &readfds, NULL, NULL, NULL);
 
             if ((activity < 0) && (errno != EINTR)) {
                 std::cerr << "Select error: " << strerror(errno) << std::endl;
@@ -69,7 +65,7 @@ void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato
             for (int fd : fds) {
                 if (FD_ISSET(fd, &readfds)) {
                     receive_potato(fd, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-                    std::cout << "Received potato!" << std::endl;
+                    // std::cout << "Received potato!" << std::endl;
                     // Depending on your logic, you might want to break out of the loop here.
                 }
             }
