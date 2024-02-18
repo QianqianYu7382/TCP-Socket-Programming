@@ -48,35 +48,37 @@ void player::setup_client(Potato potato) {
     
 }
 void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Potato& potato) {
+        std::vector<int> fds = {ringMasterFD, leftPlayerFD, rightPlayerFD};
+        int maxFD = *std::max_element(fds.begin(), fds.end());
+
         fd_set readfds;
-        int maxFD;
-        maxFD = std::max({ringMasterFD, leftPlayerFD, rightPlayerFD});
 
         while (true) {
             FD_ZERO(&readfds);
-            FD_SET(ringMasterFD, &readfds);
-            FD_SET(leftPlayerFD, &readfds);
-            FD_SET(rightPlayerFD, &readfds);
+            for (int fd : fds) {
+                FD_SET(fd, &readfds);
+            }
 
             int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL);
 
             if ((activity < 0) && (errno != EINTR)) {
-                std::cerr << "select error" << std::endl;
-                break; // 或处理错误
+                std::cerr << "Select error." << std::endl;
+                break; // Exit or handle error
             }
 
-            if (FD_ISSET(ringMasterFD, &readfds)) {
-                std::cout << "Message from master" << std::endl;
-                receive_potato(ringMasterFD, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-            } else if (FD_ISSET(leftPlayerFD, &readfds)) {
-                receive_potato(leftPlayerFD, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-            } else if (FD_ISSET(rightPlayerFD, &readfds)) {
-                receive_potato(rightPlayerFD, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+            for (int fd : fds) {
+                if (FD_ISSET(fd, &readfds)) {
+                    // Assume receive_potato is a function that handles the received potato
+                    receive_potato(fd,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+                    cout<<"receive potato!"<<endl;
+                    // Based on your logic, decide if you need to break out of the loop
+                }
             }
+        }
 
             // 这里可以添加更多的逻辑来处理接收到的potato或检查是否需要退出循环等
-        }
-    }
+}
+
 
 // void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato potato) {
 //     fd_set readfds;
