@@ -45,7 +45,7 @@ void ringmaster::setup_server(Potato potato) {
     cout<<"print client_sockets"<<endl;
     for (int i = 0; i < client_sockets.size(); i++) {
         cout<<client_sockets[i]<<endl;
-        string info = "hi palyer "<<i<<endl;
+        // string info = "hi palyer "<<i<<endl;
         // send(client_sockets[i], info.c_str(), info.size(), 0)
     }
 
