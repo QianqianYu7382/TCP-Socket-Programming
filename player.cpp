@@ -51,6 +51,8 @@ void player::get_neighbor_info(string message) {
     iss >> left_port_str; 
     iss.ignore(256, ':'); 
     iss >> right_port_str; 
+    cout<<"left_port_str: "<<left_port_str<<endl;
+    cout<<"left_ip: "<<left_ip<<endl;
 
     player_id = stoi(player_id_str);
     int left_port = stoi(left_port_str);
