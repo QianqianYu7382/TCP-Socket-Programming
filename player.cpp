@@ -1,4 +1,5 @@
 #include "player.hpp"
+#include "function.hpp"
 #include <iostream>
 #include <cstring>
 #include <sys/socket.h>
@@ -14,50 +15,26 @@ player::player(std::string machine_name, int port_num)
     : machine_name(machine_name), port_num(port_num) {}
 
 void player::setup_client() {
-    int status;
-    int socket_fd;
-    struct addrinfo host_info;
-    struct addrinfo *host_info_list;
+    
+    int socket_fd = create_client(machine_name, port_num);
+    int server_fd = create_server(0);
+    local_port = get_port(server_fd);
+    std::string local_port_str = std::to_string(local_port);
 
-    string port_str = to_string(port_num);
-
-    memset(&host_info, 0, sizeof(host_info));
-    host_info.ai_family = AF_UNSPEC;
-    host_info.ai_socktype = SOCK_STREAM;
-
-    status = getaddrinfo(machine_name.c_str(), port_str.c_str(), &host_info, &host_info_list);
-    if (status != 0) {
-        cerr << "Error: cannot get address info for host" << endl;
-        cerr << "  (" << machine_name << "," << port_str << ")" << endl;
-        return;
-    }
-
-    socket_fd = socket(host_info_list->ai_family, host_info_list->ai_socktype, host_info_list->ai_protocol);
-    if (socket_fd == -1) {
-        cerr << "Error: cannot create socket" << endl;
-        cerr << "  (" << machine_name << "," << port_str << ")" << endl;
-        return;
-    }
-
-    cout << "Connecting to " << machine_name << " on port " << port_str << "..." << endl;
-
-    status = connect(socket_fd, host_info_list->ai_addr, host_info_list->ai_addrlen);
-    if (status == -1) {
-        cerr << "Error: cannot connect to socket" << endl;
-        cerr << "  (" << machine_name << "," << port_str << ")" << endl;
-        return;
-    }
-
-    const char *message = "hi there!";
-    send(socket_fd, message, strlen(message), 0);
-    std:: string message = receive_info(socket_fd);
-    get_neighbor_info(message);
+    std::string message = local_port_str;
+    send(socket_fd, message.c_str(), message.size(), 0);
+    std:: string message1 = receive_info(socket_fd);
+    get_neighbor_info(message1);
 
     
 
-
-    end_game(host_info_list, socket_fd);
+    end_game(socket_fd);
     
+}
+
+void player::connect_neighbor(int socket_fd) {
+    int socket_client_fd_left = create_client(neighbor_ip[0], neighbor_port[0]);
+
 }
 
 void player::get_neighbor_info(string message) {
@@ -84,17 +61,18 @@ void player::get_neighbor_info(string message) {
     neighbor_ip.push_back(right_ip);
 }
 
-std:: string player::receive_info(int socket_fd) {
+
+string player:: receive_info(int socket_fd) {
     const int BUFFER_SIZE = 1024;
     char buffer[BUFFER_SIZE];
 
     int bytes_received = recv(socket_fd, buffer, BUFFER_SIZE, 0);
     if (bytes_received == -1) {
         cerr << "Error in receiving data from server" << endl;
-        return;
+        return 0;
     } else if (bytes_received == 0) {
         cout << "Server closed the connection" << endl;
-        return;
+        return 0;
     }
 
     buffer[bytes_received] = '\0';
@@ -104,8 +82,8 @@ std:: string player::receive_info(int socket_fd) {
     return message;
 }
 
-void player::end_game(struct addrinfo *host_info_list, int socket_fd) {
-    freeaddrinfo(host_info_list);
+void player::end_game( int socket_fd) {
+    
     close(socket_fd);
 }
 

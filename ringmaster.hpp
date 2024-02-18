@@ -28,8 +28,8 @@ private:
     vector<std:: string> client_ips;
     vector<int> client_ports;
 
-    vector<std:: string> server_ips;
-    vector<int> server_ports;
+    // vector<std:: string> server_ips;
+    // vector<int> server_ports;
 
 };
 

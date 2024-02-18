@@ -22,12 +22,14 @@ public:
     void setup_client();
     string receive_info(int socket_fd);
     void get_neighbor_info(string message);
-    void end_game(struct addrinfo *host_info_list, int socket_fd);
+    void end_game(int socket_fd);
+    void connect_neighbor(int socket_fd);
 
 private:
     std::string machine_name;
     int port_num;
     int player_id;
+    int local_port;
     vector<int> neighbor_port;
     vector<string> neighbor_ip;
 };
