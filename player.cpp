@@ -86,6 +86,7 @@ void player::receive_potato(int fd, int left, int right, int master, Potato& pot
             potato.idx++;
             srand((unsigned int)time(NULL)+player_id);
             int id = rand() % 2;
+            id = 0;
             int send_fd = 0;
             if (id == 0){
                 send_fd = left;
