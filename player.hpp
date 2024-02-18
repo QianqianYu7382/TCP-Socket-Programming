@@ -34,6 +34,8 @@ private:
     int player_id;
     int local_port;
     int server_fd;
+    int left_fd;
+    int right_fd;
     vector<int> neighbor_port;
     vector<string> neighbor_ip;
 };

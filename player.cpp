@@ -31,7 +31,10 @@ void player::setup_client(Potato potato) {
     std:: string message1 = receive_info(socket_fd);
     get_neighbor_info(message1);
     connect_neighbor(socket_fd);
-    
+    int ringMasterFD = socket_fd;
+    int leftPlayerFD = left_fd;
+    int rightPlayerFD = right_fd;
+    listen3(ringMasterFD,leftPlayerFD,rightPlayerFD, potato);
 
 
     end_game(socket_fd);
@@ -110,10 +113,12 @@ void player::receive_potato(int fd, int left, int right, int master, Potato& pot
 void player::connect_neighbor(int socket_fd) {
     //left is server
     int socket_client_fd_left = create_client(neighbor_ip[0], neighbor_port[0]);
+    left_fd = socket_client_fd_left;
     //accept right client
     struct sockaddr_storage their_addr;
     socklen_t addr_size = sizeof(their_addr);
     int new_fd = accept(server_fd, (struct sockaddr *)&their_addr, &addr_size);
+    int right_fd = new_fd;
     cout<<"Connect neighbor success!"<<endl;
 
 }
