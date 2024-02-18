@@ -1,6 +1,4 @@
-#include <iostream>
-#include <cstring>
-#include <cstdlib>
+
 // potato.hpp
 #ifndef POTATO_HPP
 #define POTATO_HPP
