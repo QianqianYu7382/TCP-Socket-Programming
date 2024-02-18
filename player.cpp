@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -46,41 +47,71 @@ void player::setup_client(Potato potato) {
     end_game(socket_fd);
     
 }
+void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Potato& potato) {
+        fd_set readfds;
+        int maxFD;
+        maxFD = std::max({ringMasterFD, leftPlayerFD, rightPlayerFD});
 
-void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato potato) {
-    fd_set readfds;
-    int maxFD;
-    maxFD = ringMasterFD > leftPlayerFD ? ringMasterFD : leftPlayerFD;
-    maxFD = maxFD > rightPlayerFD ? maxFD : rightPlayerFD;
-    while (true) {
-        FD_ZERO(&readfds);
-        FD_SET(ringMasterFD, &readfds);
-        FD_SET(leftPlayerFD, &readfds);
-        FD_SET(rightPlayerFD, &readfds);
+        while (true) {
+            FD_ZERO(&readfds);
+            FD_SET(ringMasterFD, &readfds);
+            FD_SET(leftPlayerFD, &readfds);
+            FD_SET(rightPlayerFD, &readfds);
 
-        int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL);
+            int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL);
 
-        if ((activity < 0) && (errno != EINTR)) {
-            std::cout << "select error" << std::endl;
+            if ((activity < 0) && (errno != EINTR)) {
+                std::cerr << "select error" << std::endl;
+                break; // 或处理错误
+            }
+
+            if (FD_ISSET(ringMasterFD, &readfds)) {
+                std::cout << "Message from master" << std::endl;
+                receive_potato(ringMasterFD, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+            } else if (FD_ISSET(leftPlayerFD, &readfds)) {
+                receive_potato(leftPlayerFD, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+            } else if (FD_ISSET(rightPlayerFD, &readfds)) {
+                receive_potato(rightPlayerFD, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+            }
+
+            // 这里可以添加更多的逻辑来处理接收到的potato或检查是否需要退出循环等
         }
-
-        if (FD_ISSET(ringMasterFD, &readfds)) {
-            cout << "send from master"<<endl;
-            receive_potato(ringMasterFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-        }
-
-        if (FD_ISSET(leftPlayerFD, &readfds)) {
-            receive_potato(leftPlayerFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-        }
-
-        if (FD_ISSET(rightPlayerFD, &readfds)) {
-            receive_potato(rightPlayerFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-        }
-
-        // 处理数据...
     }
 
-}
+// void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato potato) {
+//     fd_set readfds;
+//     int maxFD;
+//     maxFD = ringMasterFD > leftPlayerFD ? ringMasterFD : leftPlayerFD;
+//     maxFD = maxFD > rightPlayerFD ? maxFD : rightPlayerFD;
+//     while (true) {
+//         FD_ZERO(&readfds);
+//         FD_SET(ringMasterFD, &readfds);
+//         FD_SET(leftPlayerFD, &readfds);
+//         FD_SET(rightPlayerFD, &readfds);
+
+//         int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL);
+
+//         if ((activity < 0) && (errno != EINTR)) {
+//             std::cout << "select error" << std::endl;
+//         }
+
+//         if (FD_ISSET(ringMasterFD, &readfds)) {
+//             cout << "send from master"<<endl;
+//             receive_potato(ringMasterFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+//         }
+
+//         if (FD_ISSET(leftPlayerFD, &readfds)) {
+//             receive_potato(leftPlayerFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+//         }
+
+//         if (FD_ISSET(rightPlayerFD, &readfds)) {
+//             receive_potato(rightPlayerFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+//         }
+
+//         // 处理数据...
+//     }
+
+// }
 
 //fd is original send_fd
 void player::receive_potato(int fd, int left, int right, int master, Potato& potato) {
