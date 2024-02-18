@@ -20,7 +20,7 @@ void player::setup_client() {
     int server_fd = create_server(0);
     local_port = get_port(server_fd);
     std::string local_port_str = std::to_string(local_port);
-
+    cout<<"local port number : "<<local_port_str<<endl;
     std::string message = local_port_str;
     send(socket_fd, message.c_str(), message.size(), 0);
     std:: string message1 = receive_info(socket_fd);
