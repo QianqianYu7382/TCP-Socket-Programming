@@ -28,9 +28,15 @@ void player::setup_client(Potato potato) {
     cout<<"local port number : "<<local_port_str<<endl;
     std::string message = local_port_str;
     send(socket_fd, message.c_str(), message.size(), 0);
+
+    // string test = receive_info(socket_fd);
+    // cout<<test<<endl;
+
+
     std:: string message1 = receive_info(socket_fd);
     get_neighbor_info(message1);
-    connect_neighbor(socket_fd);
+    
+    (socket_fd);
     int ringMasterFD = socket_fd;
     int leftPlayerFD = left_fd;
     int rightPlayerFD = right_fd;
@@ -59,6 +65,7 @@ void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato
         }
 
         if (FD_ISSET(ringMasterFD, &readfds)) {
+            cout << "send from master"<<endl;
             receive_potato(ringMasterFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
         }
 

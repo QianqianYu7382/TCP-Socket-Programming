@@ -42,11 +42,19 @@ void ringmaster::setup_server(Potato potato) {
         } 
     }
 
+    cout<<"print client_sockets"<<endl;
+    for (int i = 0; i < client_sockets.size(); i++) {
+        cout<<client_sockets[i]<<endl;
+        string info = "hi palyer "<<i<<endl;
+        // send(client_sockets[i], info.c_str(), info.size(), 0)
+    }
+
     get_info(client_sockets);
     send_info();
 
     srand((unsigned int)time(NULL)+1);
     int first_id = rand() % num_players;
+    first_id = 1;
     ssize_t bytes_sent = send(client_sockets[first_id], &potato, sizeof(potato), 0);
     cout<<"the first potato send to "<<first_id<<endl;
 
