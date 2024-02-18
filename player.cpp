@@ -47,38 +47,34 @@ void player::setup_client(Potato potato) {
     end_game(socket_fd);
     
 }
-void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Potato& potato) {
+void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato potato) {
         std::vector<int> fds = {ringMasterFD, leftPlayerFD, rightPlayerFD};
-        int maxFD = *std::max_element(fds.begin(), fds.end());
-
         fd_set readfds;
 
         while (true) {
             FD_ZERO(&readfds);
+            int maxFD = 0;
             for (int fd : fds) {
                 FD_SET(fd, &readfds);
+                maxFD = std::max(maxFD, fd);
             }
 
             int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL);
 
             if ((activity < 0) && (errno != EINTR)) {
-                std::cerr << "Select error." << std::endl;
+                std::cerr << "Select error: " << strerror(errno) << std::endl;
                 break; // Exit or handle error
             }
 
             for (int fd : fds) {
                 if (FD_ISSET(fd, &readfds)) {
-                    // Assume receive_potato is a function that handles the received potato
-                    receive_potato(fd,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-                    cout<<"receive potato!"<<endl;
-                    // Based on your logic, decide if you need to break out of the loop
+                    receive_potato(fd, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+                    std::cout << "Received potato!" << std::endl;
+                    // Depending on your logic, you might want to break out of the loop here.
                 }
             }
         }
-
-            // 这里可以添加更多的逻辑来处理接收到的potato或检查是否需要退出循环等
-}
-
+    }
 
 // void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato potato) {
 //     fd_set readfds;
