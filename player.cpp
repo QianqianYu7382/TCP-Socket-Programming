@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
 
     std::string machine_name = argv[1];
     int port_num = atoi(argv[2]);
-    int num_hops = atoi(argv[3]);
+    // int num_hops = atoi(argv[3]);
     Potato potato;
     player player(machine_name, port_num);
     player.setup_client(potato);
