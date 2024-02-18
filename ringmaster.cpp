@@ -54,6 +54,7 @@ void ringmaster::setup_server() {
     }
 }
 
+
 void ringmaster::send_info() {
     for (size_t i = 0; i < client_sockets.size(); ++i) {
         int palyer_id = i;
@@ -92,6 +93,7 @@ void ringmaster::get_info(vector<int> client_sockets) {
         getpeername(new_fd, (struct sockaddr *)&client_addr, &client_addr_size);
         std::string client_ip = inet_ntoa(client_addr.sin_addr);
         client_ips.push_back(client_ip);
+        cout<<"client_ip"<<client_ip<<endl;
 
 
 
