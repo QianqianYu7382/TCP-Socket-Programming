@@ -40,24 +40,11 @@ void player::setup_client(Potato & potato) {
     std:: string message1 = receive_info(socket_fd);
 
     get_neighbor_info(message1);
+    connect_neighbor(socket_fd);
+    print_info();
+    // int revc_potato = recv(socket_fd, &potato, sizeof(potato), 0);
+    // cout << "Received message potato from server: " << potato.hops << endl;
 
-    int revc_potato = recv(socket_fd, &potato, sizeof(potato), 0);
-    cout << "Received message potato from server: " << potato.hops << endl;
-    // if (revc_potato == sizeof(potato)) {
-    // // 成功接收到完整的 Potato 对象
-    //     cout << "Receive test potato, hops is: " << potato.hops << endl;
-    // } else {
-    //     // 数据接收不完整或出错
-    //     cout << "Failed to receive the complete potato object. Received bytes: " << revc_potato << endl;
-    // }
-
-
-    // Potato recv_potato;
-    // recv(socket_fd, &recv_potato, sizeof(recv_potato),0);
-    // cout << "Received message potato from server: " << recv_potato.hops << endl;
-
-    // (socket_fd);
-    cout<<"now in listen 3"<<endl;
     int ringMasterFD = socket_fd;
     int leftPlayerFD = left_fd;
     int rightPlayerFD = right_fd;
@@ -67,100 +54,106 @@ void player::setup_client(Potato & potato) {
     end_game(socket_fd);
     
 }
-void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato & potato) {
-        std::vector<int> fds = {ringMasterFD, leftPlayerFD, rightPlayerFD};
+
+
+
+void player::print_info() {
+    cout<<"print info"<<endl;
+    for (int i = 0; i < neighbor_port.size(); i++) {
+        cout<<"port "<<i<<": "<<neighbor_port[i]<<endl;
+    }
+    for (int i = 0; i < neighbor_ip.size(); i++) {
+        cout<<"ip "<<i<<": "<<neighbor_ip[i]<<endl;
+    }
+    cout<<"left: "<<left_fd<<endl;
+    cout<<"right: "<<right_fd<<endl;
+}
+
+void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Potato &potato) {
+    // int revc_potato = recv(ringMasterFD, &potato, sizeof(potato), 0);
+    //     if (revc_potato > 0) {
+    //         cout << "Received message potato from server in begin: " << potato.hops << endl;
+    //     }
+    std::vector<int> fds = {ringMasterFD, leftPlayerFD, rightPlayerFD};
+    
+    int maxFD = *max_element(fds.begin(), fds.end()); // 计算最大的文件描述符
+    for (int i = 0; i < 3; i++) {
+        cout<<i<<": "<<fds[i]<<endl;
+    }
+
+    int check = 1;
+    srand((unsigned int)time(NULL)+player_id);
+    while (check == 1) {
         fd_set readfds;
+        FD_ZERO(&readfds);
+        for (int i = 0; i < 3; i++) {
+            FD_SET(fds[i], &readfds); // 为每个文件描述符设置readfds位
+        }
 
-        while (true) {
-            FD_ZERO(&readfds);
-            // int maxFD = 1024;
+        int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL); // 使用正确的maxFD
 
-            int activity = select(1024, &readfds, NULL, NULL, NULL);
+        if ((activity < 0) && (errno != EINTR)) {
+            std::cerr << "Select error: " << strerror(errno) << std::endl;
+            break; // Exit or handle error
+        }
 
-            if ((activity < 0) && (errno != EINTR)) {
-                std::cerr << "Select error: " << strerror(errno) << std::endl;
-                break; // Exit or handle error
-            }
+        for (int fd : fds) {
+            if (FD_ISSET(fd, &readfds)) {
+                int revc_potato = recv(fd, &potato, sizeof(potato), 0);
+                if (revc_potato >0) {
+                    cout<<"receive from: "<<fd<<endl;
+                    std::cout << "Potato received with hops: " << potato.hops << ", idx: " << potato.idx << std::endl;
+                    if (potato.hops == 1) {
+                        potato.hops--; 
+                        cout<<"potato.idx: "<<potato.idx<<endl;
+                        potato.record[potato.idx] = player_id; 
+                        potato.idx++;
+                        send(ringMasterFD, &potato, sizeof(potato), 0);
+                        cout<<"I'am it!"<<endl;
+                        cout<<"list________________"<<endl;
+                        for (int i = 0; i < 10; i++) {
+                            cout<<potato.record[i]<<endl;
+                        }
+                        cout<<"list________________"<<endl;
+                        check = 0;
+                    }else if (potato.hops > 1) {
+                        potato.hops--; 
+                        cout<<"potato.idx: "<<potato.idx<<endl;
+                        potato.record[potato.idx] = player_id; 
+                        potato.idx++;
+                        int id = rand() % 2;
+                        int send_fd = 0;
+                        if (id == 0){
+                            send_fd = leftPlayerFD;
+                            cout<<"send to left"<<endl;
+                        } 
+                        
+                        if (id == 1) {
+                            send_fd = rightPlayerFD;
+                            cout<<"send to right"<<endl;
+                        } 
+                        ssize_t bytes_sent = send(send_fd, &potato, sizeof(potato), 0);
 
-            for (int fd : fds) {
-                if (FD_ISSET(fd, &readfds)) {
-                    std::cout << "Received potato!" << std::endl;
-                    receive_potato(fd, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-                    std::cout << "Received potato!" << std::endl;
-                    // Depending on your logic, you might want to break out of the loop here.
+                    }
+                    //give master
+                    // if (potato.hops == 1) {
+                    //     send(ringMasterFD, &potato, sizeof(potato), 0);
+                    //     cout<<"I'am it!"<<endl;
+                    //     check = 0;
+                    // }
+                    std::cout << "Potato modified to hops: " << potato.hops << std::endl;
                 }
+
+                // receive_potato(fd, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+                // 根据逻辑，可能需要在这里退出循环
             }
         }
     }
-
-// void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Potato& potato) {
-//     std::vector<int> fds = {ringMasterFD, leftPlayerFD, rightPlayerFD};
-//     fd_set readfds;
-//     int max_fd = 0;
-
-//     while (true) {
-//         FD_ZERO(&readfds); // 清空readfds集合
-
-//         // 添加文件描述符到readfds集合
-//         for (int fd : fds) {
-//             FD_SET(fd, &readfds); // 使用FD_SET
-//             if (fd > max_fd) max_fd = fd; // 更新最大的文件描述符
-//         }
-
-//         // 注意：select的第一个参数是最大文件描述符值加1
-//         int activity = select(max_fd + 1, &readfds, NULL, NULL, NULL);
-
-//         if ((activity < 0) && (errno != EINTR)) {
-//             std::cerr << "Select error: " << strerror(errno) << std::endl;
-//             break; // Exit or handle error
-//         }
-
-//         for (int fd : fds) {
-//             if (FD_ISSET(fd, &readfds)) { // 检查fd是否在readfds集合中
-//                 // std::cout << "Received potato!" << std::endl;
-//                 receive_potato(fd, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-//             }
-//         }
-//         // 依据你的逻辑，你可能想要在这里退出循环
-//     }
-// }
+}
 
 
 
-// void player::listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato potato) {
-//     fd_set readfds;
-//     int maxFD;
-//     maxFD = ringMasterFD > leftPlayerFD ? ringMasterFD : leftPlayerFD;
-//     maxFD = maxFD > rightPlayerFD ? maxFD : rightPlayerFD;
-//     while (true) {
-//         FD_ZERO(&readfds);
-//         FD_SET(ringMasterFD, &readfds);
-//         FD_SET(leftPlayerFD, &readfds);
-//         FD_SET(rightPlayerFD, &readfds);
 
-//         int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL);
-
-//         if ((activity < 0) && (errno != EINTR)) {
-//             std::cout << "select error" << std::endl;
-//         }
-
-//         if (FD_ISSET(ringMasterFD, &readfds)) {
-//             cout << "send from master"<<endl;
-//             receive_potato(ringMasterFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-//         }
-
-//         if (FD_ISSET(leftPlayerFD, &readfds)) {
-//             receive_potato(leftPlayerFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-//         }
-
-//         if (FD_ISSET(rightPlayerFD, &readfds)) {
-//             receive_potato(rightPlayerFD,leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-//         }
-
-//         // 处理数据...
-//     }
-
-// }
 
 //fd is original send_fd
 void player::receive_potato(int fd, int left, int right, int master, Potato& potato) {
@@ -194,6 +187,8 @@ void player::receive_potato(int fd, int left, int right, int master, Potato& pot
             cout<<"I'am it!"<<endl;
         }
         std::cout << "Potato modified to hops: " << potato.hops << std::endl;
+    }else {
+        cout<<"recv fail in potato function"<<endl;
     }
 }
 
@@ -205,8 +200,10 @@ void player::connect_neighbor(int socket_fd) {
     struct sockaddr_storage their_addr;
     socklen_t addr_size = sizeof(their_addr);
     int new_fd = accept(server_fd, (struct sockaddr *)&their_addr, &addr_size);
-    int right_fd = new_fd;
+    right_fd = new_fd;
     cout<<"Connect neighbor success!"<<endl;
+    cout<<"left_fd"<<left_fd<<endl;
+    cout<<"right_fd"<<right_fd<<endl;
 
 }
 
@@ -310,3 +307,5 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
+

@@ -62,23 +62,24 @@ void ringmaster::setup_server(Potato & potato) {
     int first_id = rand() % num_players;
     // first_id = 0;
     
-    ssize_t bytes_sent0 = send(client_sockets[0], &potato, sizeof(potato), 0);
-    ssize_t bytes_sent1 = send(client_sockets[1], &potato, sizeof(potato), 0);
-    ssize_t bytes_sent2 = send(client_sockets[2], &potato, sizeof(potato), 0);
-    ssize_t bytes_sent3 = send(client_sockets[3], &potato, sizeof(potato), 0);
+    // ssize_t bytes_sent0 = send(client_sockets[0], &potato, sizeof(potato), 0);
+    // ssize_t bytes_sent1 = send(client_sockets[1], &potato, sizeof(potato), 0);
+    // ssize_t bytes_sent2 = send(client_sockets[2], &potato, sizeof(potato), 0);
+    // ssize_t bytes_sent3 = send(client_sockets[3], &potato, sizeof(potato), 0);
 
     cout<<"the first potato send to "<<first_id<<endl;
     ssize_t bytes_sent = send(client_sockets[first_id], &potato, sizeof(potato), 0);
 
     
 
-    if (num_hops == 0) {
-        for (int client_fd : client_sockets) {
-            close(client_fd); // 关闭客户端套接字
-        }
-        close(server_fd);
+    // if (num_hops == 0) {
+    //     cout<<"now  hops is 0"<<endl;
+    //     for (int client_fd : client_sockets) {
+    //         close(client_fd); // 关闭客户端套接字
+    //     }
+    //     close(server_fd);
         
-    }
+    // }
 }
 
 

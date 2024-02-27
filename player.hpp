@@ -27,6 +27,7 @@ public:
     void connect_neighbor(int socket_fd);
     void receive_potato(int fd, int left, int right, int master, Potato& potato);
     void listen3(int ringMasterFD,int leftPlayerFD,int rightPlayerFD, Potato & potato);
+    void print_info();
 
 private:
     std::string machine_name;
