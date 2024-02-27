@@ -17,7 +17,8 @@ class ringmaster {
 public:
     ringmaster(int port, int num_players, int num_hops);
     void print_background();
-    void setup_server(Potato potato);
+    void setup_server(Potato & potato);
+    // void setup_server();
     void get_info(vector<int> client_sockets);
     void send_info();
 

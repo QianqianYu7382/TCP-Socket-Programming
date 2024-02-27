@@ -23,13 +23,15 @@ void ringmaster::print_background() {
 }
 
 
-void ringmaster::setup_server(Potato potato) {
+void ringmaster::setup_server(Potato & potato) {
+// void ringmaster::setup_server() {
     int server_fd = create_server(port);
 
     std::cout << "Waiting for connection on port " << port << std::endl;
 
     // 只接受num_players指定数量的客户端连接
-    while (client_sockets.size() < static_cast<unsigned int>(num_players)) {
+    // while (client_sockets.size() < static_cast<unsigned int>(num_players)) {
+    for(int i = 0; i<num_players; i++){
         struct sockaddr_storage their_addr;
         socklen_t addr_size = sizeof(their_addr);
         int new_fd = accept(server_fd, (struct sockaddr *)&their_addr, &addr_size);
@@ -42,6 +44,8 @@ void ringmaster::setup_server(Potato potato) {
         } 
     }
 
+    
+
     cout<<"print client_sockets"<<endl;
     for (int i = 0; i < client_sockets.size(); i++) {
         cout<<client_sockets[i]<<endl;
@@ -52,11 +56,21 @@ void ringmaster::setup_server(Potato potato) {
     get_info(client_sockets);
     send_info();
 
+    // cout<<"Now hops is: "<s
+
     srand((unsigned int)time(NULL)+1);
     int first_id = rand() % num_players;
-    first_id = 0;
-    ssize_t bytes_sent = send(client_sockets[first_id], &potato, sizeof(potato), 0);
+    // first_id = 0;
+    
+    ssize_t bytes_sent0 = send(client_sockets[0], &potato, sizeof(potato), 0);
+    ssize_t bytes_sent1 = send(client_sockets[1], &potato, sizeof(potato), 0);
+    ssize_t bytes_sent2 = send(client_sockets[2], &potato, sizeof(potato), 0);
+    ssize_t bytes_sent3 = send(client_sockets[3], &potato, sizeof(potato), 0);
+
     cout<<"the first potato send to "<<first_id<<endl;
+    ssize_t bytes_sent = send(client_sockets[first_id], &potato, sizeof(potato), 0);
+
+    
 
     if (num_hops == 0) {
         for (int client_fd : client_sockets) {
@@ -71,6 +85,7 @@ void ringmaster::setup_server(Potato potato) {
 void ringmaster::send_info() {
     Potato test_p;
     test_p.hops = 12;
+    test_p.idx = 10;
     for (size_t i = 0; i < client_sockets.size(); ++i) {
         int palyer_id = i;
         size_t left_index = (i + client_sockets.size() - 1) % client_sockets.size();
@@ -90,15 +105,46 @@ void ringmaster::send_info() {
                       " Left_IP: " + left_ip +
                       " Right_IP: " + right_ip +
                       " Left_Port: " + left_port_str +
-                      " Right_Port: " + right_port_str + "\n";
+                      " Right_Port: " + right_port_str + + "\n";
 
-        ssize_t bytes_sent = send(client_sockets[i], message.c_str(), message.size(), 0);
-        send(client_sockets[i], &test_p, sizeof(test_p), 0);
-        if (bytes_sent == -1) {
-            perror("send");
-            // Handle error
-        }
+
+        cout<<"print send mess here +++++++++++++++++"<<endl;
+        cout<<message<<endl;
+        cout<<"print send mess here +++++++++++++++++"<<endl;
+
+
+        int len = message.length();
+        ssize_t bytes_sent1 = send(client_sockets[i], &len, sizeof(len), 0);
+
+        ssize_t bytes_sent = send(client_sockets[i], message.c_str(), len, 0);
+        
+
+        // int send_test = 8273;
+        // ssize_t bytes_sent11 = send(client_sockets[i], &send_test, sizeof(send_test), 0);
+        // int send_test1 = 7238;
+        // ssize_t bytes_sent1 = send(client_sockets[i], &send_test1, sizeof(send_test), 0);
+        // Potato test_potato;
+        // test_potato.hops = 999;
+        // int test_hop = 999;
+        // ssize_t bytes_sent2 = send(client_sockets[i], &test_hop, sizeof(test_hop), 0);
+
+        // int test_hop1 = test_potato.hops;
+        // ssize_t bytes_sent3 = send(client_sockets[i], &test_hop1, sizeof(test_hop1), 0);
+
+        // ssize_t bytes_sent4 = send(client_sockets[i], &test_potato, sizeof(test_potato), 0);
+
+        
+        // if (bytes_sent == -1) {
+        //     perror("send");
+        //     // Handle error
+        // }
     }
+    // for(size_t i = 0; i<client_sockets.size();i++){
+    //     int send_potato = send(client_sockets[i], &test_p, sizeof(test_p), 0);
+    //     if(send_potato > 0){
+    //         cout<<"test potato has successfully send to "<<i<<" hops is: "<<test_p.hops<<endl;
+    //     }
+    // }
 }
 
 void ringmaster::get_info(vector<int> client_sockets) {
@@ -147,6 +193,7 @@ int main(int argc, char* argv[]) {
     ringmaster ringmaster(port, num_players, num_hops);
     ringmaster.print_background();
     ringmaster.setup_server(potato);
+    // ringmaster.setup_server(potato);
 
     return 0;
 }
