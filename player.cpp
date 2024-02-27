@@ -26,7 +26,7 @@ void player::setup_client(Potato & potato) {
     server_fd = create_server(0);
     local_port = get_port(server_fd);
     std::string local_port_str = std::to_string(local_port);
-    cout<<"local port number : "<<local_port_str<<endl;
+    // cout<<"local port number : "<<local_port_str<<endl;
     std::string message = local_port_str;
 
     // 
@@ -41,19 +41,22 @@ void player::setup_client(Potato & potato) {
 
     get_neighbor_info(message1);
     connect_neighbor(socket_fd);
-    print_info();
+    // print_info();
     // int revc_potato = recv(socket_fd, &potato, sizeof(potato), 0);
     // cout << "Received message potato from server: " << potato.hops << endl;
 
     int ringMasterFD = socket_fd;
     int leftPlayerFD = left_fd;
     int rightPlayerFD = right_fd;
+    cout<<"Connected as player "<<player_id<<" out of "<<total_player<<" total players"<<endl;
     listen3(ringMasterFD,leftPlayerFD,rightPlayerFD, potato);
 
 
     end_game(socket_fd);
     
 }
+
+
 
 
 
@@ -70,16 +73,12 @@ void player::print_info() {
 }
 
 void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Potato &potato) {
-    // int revc_potato = recv(ringMasterFD, &potato, sizeof(potato), 0);
-    //     if (revc_potato > 0) {
-    //         cout << "Received message potato from server in begin: " << potato.hops << endl;
-    //     }
     std::vector<int> fds = {ringMasterFD, leftPlayerFD, rightPlayerFD};
     
     int maxFD = *max_element(fds.begin(), fds.end()); // 计算最大的文件描述符
-    for (int i = 0; i < 3; i++) {
-        cout<<i<<": "<<fds[i]<<endl;
-    }
+    // for (int i = 0; i < 3; i++) {
+    //     cout<<i<<": "<<fds[i]<<endl;
+    // }
 
     int check = 1;
     srand((unsigned int)time(NULL)+player_id);
@@ -101,47 +100,55 @@ void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Pota
             if (FD_ISSET(fd, &readfds)) {
                 int revc_potato = recv(fd, &potato, sizeof(potato), 0);
                 if (revc_potato >0) {
-                    cout<<"receive from: "<<fd<<endl;
-                    std::cout << "Potato received with hops: " << potato.hops << ", idx: " << potato.idx << std::endl;
+                    // cout<<"receive from: "<<fd<<endl;
+                    // std::cout << "Potato received with hops: " << potato.hops << ", idx: " << potato.idx << std::endl;
+                    if (potato.hops == 0) {
+                        check = 0;
+                    }
                     if (potato.hops == 1) {
                         potato.hops--; 
-                        cout<<"potato.idx: "<<potato.idx<<endl;
+                        // cout<<"potato.idx: "<<potato.idx<<endl;
                         potato.record[potato.idx] = player_id; 
                         potato.idx++;
                         send(ringMasterFD, &potato, sizeof(potato), 0);
                         cout<<"I'am it!"<<endl;
-                        cout<<"list________________"<<endl;
-                        for (int i = 0; i < 10; i++) {
-                            cout<<potato.record[i]<<endl;
-                        }
-                        cout<<"list________________"<<endl;
+                        // cout<<"list________________"<<endl;
+                        // for (int i = 0; i < 10; i++) {
+                        //     cout<<potato.record[i]<<endl;
+                        // }
+                        // cout<<"list________________"<<endl;
                         check = 0;
                     }else if (potato.hops > 1) {
                         potato.hops--; 
-                        cout<<"potato.idx: "<<potato.idx<<endl;
+                        // cout<<"potato.idx: "<<potato.idx<<endl;
                         potato.record[potato.idx] = player_id; 
                         potato.idx++;
                         int id = rand() % 2;
                         int send_fd = 0;
                         if (id == 0){
                             send_fd = leftPlayerFD;
-                            cout<<"send to left"<<endl;
+                            int id_print = -1;
+                            if (player_id-1<0) {
+                                id_print = total_player-1;
+                            }else {
+                                id_print = player_id-1;
+                            }
+                            cout<<"Sending potato to "<<id_print<<endl;
                         } 
                         
                         if (id == 1) {
                             send_fd = rightPlayerFD;
-                            cout<<"send to right"<<endl;
+                            int id_print = -1;
+                            if (player_id+1>total_player-1) {
+                                id_print = 0;
+                            }else {
+                                id_print = player_id+1;
+                            }
+                            cout<<"Sending potato to "<<id_print<<endl;
                         } 
                         ssize_t bytes_sent = send(send_fd, &potato, sizeof(potato), 0);
 
                     }
-                    //give master
-                    // if (potato.hops == 1) {
-                    //     send(ringMasterFD, &potato, sizeof(potato), 0);
-                    //     cout<<"I'am it!"<<endl;
-                    //     check = 0;
-                    // }
-                    std::cout << "Potato modified to hops: " << potato.hops << std::endl;
                 }
 
                 // receive_potato(fd, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
@@ -152,46 +159,6 @@ void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Pota
 }
 
 
-
-
-
-//fd is original send_fd
-void player::receive_potato(int fd, int left, int right, int master, Potato& potato) {
-    cout<<"now in receive potato function"<<endl;
-    ssize_t bytesReceived = recv(fd, &potato, sizeof(potato), 0);
-    if (bytesReceived >0) {
-        std::cout << "Potato received with hops: " << potato.hops << ", idx: " << potato.idx << std::endl;
-        if (potato.hops > 0) {
-            potato.hops--; 
-            cout<<"potato.idx: "<<potato.idx<<endl;
-            potato.record[potato.idx] = player_id; 
-            potato.idx++;
-            srand((unsigned int)time(NULL)+player_id);
-            int id = rand() % 2;
-            int send_fd = 0;
-            if (id == 0){
-                send_fd = left;
-                cout<<"send to left"<<endl;
-            } 
-            
-            if (id == 1) {
-                send_fd = right;
-                cout<<"send to right"<<endl;
-            } 
-            ssize_t bytes_sent = send(send_fd, &potato, sizeof(potato), 0);
-
-        }
-        //give master
-        if (potato.hops == 0) {
-            send(master, &potato, sizeof(potato), 0);
-            cout<<"I'am it!"<<endl;
-        }
-        std::cout << "Potato modified to hops: " << potato.hops << std::endl;
-    }else {
-        cout<<"recv fail in potato function"<<endl;
-    }
-}
-
 void player::connect_neighbor(int socket_fd) {
     //left is server
     int socket_client_fd_left = create_client(neighbor_ip[0], neighbor_port[0]);
@@ -201,9 +168,9 @@ void player::connect_neighbor(int socket_fd) {
     socklen_t addr_size = sizeof(their_addr);
     int new_fd = accept(server_fd, (struct sockaddr *)&their_addr, &addr_size);
     right_fd = new_fd;
-    cout<<"Connect neighbor success!"<<endl;
-    cout<<"left_fd"<<left_fd<<endl;
-    cout<<"right_fd"<<right_fd<<endl;
+    // cout<<"Connect neighbor success!"<<endl;
+    // cout<<"left_fd"<<left_fd<<endl;
+    // cout<<"right_fd"<<right_fd<<endl;
 
 }
 
@@ -221,8 +188,8 @@ void player::get_neighbor_info(string message) {
     iss >> left_port_str; 
     iss.ignore(256, ':'); 
     iss >> right_port_str; 
-    cout<<"left_port_str: "<<left_port_str<<endl;
-    cout<<"left_ip: "<<left_ip<<endl;
+    // cout<<"left_port_str: "<<left_port_str<<endl;
+    // cout<<"left_ip: "<<left_ip<<endl;
 
     player_id = stoi(player_id_str);
     int left_port = stoi(left_port_str);
@@ -231,17 +198,16 @@ void player::get_neighbor_info(string message) {
     neighbor_port.push_back(right_port);
     neighbor_ip.push_back(left_ip);
     neighbor_ip.push_back(right_ip);
-    cout<<"Player "<<player_id_str<<" is is ready to play"<<endl;
+    // cout<<"Player "<<player_id_str<<" is is ready to play"<<endl;
 }
 
 
 string player:: receive_info(int socket_fd) {
-    // const int BUFFER_SIZE = 1024;
-    // char buffer[BUFFER_SIZE];
+
 
     int len;
     int bytes_received_len = recv(socket_fd, &len, sizeof(len), 0);
-    cout<<"len is : "<<len<<endl;
+    // cout<<"len is : "<<len<<endl;
     
     char buffer[65538];
     memset(buffer,0,65538);
@@ -254,34 +220,17 @@ string player:: receive_info(int socket_fd) {
         return 0;
     }
 
-    // buffer[bytes_received] = '\0';
+    int players_total;
+    int bytes_received_num_player = recv(socket_fd, &players_total, sizeof(players_total), 0);
+    total_player = players_total;
+
 
     string message(buffer,len);
-    cout << "Received message from server: " << message << endl;
-    cout << "receive finish"<<endl;
+    // cout << "Received message from server: " << message << endl;
+    // cout << "receive finish"<<endl;
 
     return message;
 
-    // int buffer;
-    // recv(socket_fd, &buffer, sizeof(buffer),0);
-    // cout << "Received message 1 from server: " << buffer << endl;
-
-    // int buffer1;
-    // recv(socket_fd, &buffer1, sizeof(buffer1),0);
-    // cout << "Received message 2 from server: " << buffer1 << endl;
-
-    // int buffer3;
-    // recv(socket_fd, &buffer3, sizeof(buffer3),0);
-    // cout << "Received message potato from server: " << buffer3 << endl;
-
-    // int buffer4;
-    // recv(socket_fd, &buffer4, sizeof(buffer4),0);
-    // cout << "Received message potato from server: " << buffer4 << endl;
-
-    // Potato recv_potato;
-    // recv(socket_fd, &recv_potato, sizeof(recv_potato),0);
-    // cout << "Received message potato from server: " << recv_potato.hops << endl;
-    // return "";
 }
 
 void player::end_game( int socket_fd) {

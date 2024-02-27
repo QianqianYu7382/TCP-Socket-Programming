@@ -38,7 +38,7 @@ int create_client(string machine_name, int port_num) {
         return 0;
     }
 
-    cout << "Connecting to " << machine_name << " on port " << port_str << "..." << endl;
+    // cout << "Connecting to " << machine_name << " on port " << port_str << "..." << endl;
 
     status = connect(socket_fd, host_info_list->ai_addr, host_info_list->ai_addrlen);
     if (status == -1) {
@@ -132,6 +132,6 @@ std:: string receive_info(int socket_fd) {
     buffer[bytes_received] = '\0';
 
     string message(buffer);
-    cout << "Received message from server: " << message << endl;
+    // cout << "Received message from server: " << message << endl;
     return message;
 }

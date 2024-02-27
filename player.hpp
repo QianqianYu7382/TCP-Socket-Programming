@@ -31,6 +31,7 @@ public:
 
 private:
     std::string machine_name;
+    int total_player;
     int port_num;
     int player_id;
     int local_port;

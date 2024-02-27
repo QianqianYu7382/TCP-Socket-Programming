@@ -21,6 +21,7 @@ public:
     // void setup_server();
     void get_info(vector<int> client_sockets);
     void send_info();
+    void listen_player(int num_players,  Potato & potato);
 
 private:
     int port;

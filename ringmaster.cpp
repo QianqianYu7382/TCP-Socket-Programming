@@ -10,6 +10,8 @@
 #include <arpa/inet.h> 
 #include <sstream>
 #include <string>
+#include <unistd.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -27,7 +29,7 @@ void ringmaster::setup_server(Potato & potato) {
 // void ringmaster::setup_server() {
     int server_fd = create_server(port);
 
-    std::cout << "Waiting for connection on port " << port << std::endl;
+    // std::cout << "Waiting for connection on port " << port << std::endl;
 
     // 只接受num_players指定数量的客户端连接
     // while (client_sockets.size() < static_cast<unsigned int>(num_players)) {
@@ -37,7 +39,8 @@ void ringmaster::setup_server(Potato & potato) {
         int new_fd = accept(server_fd, (struct sockaddr *)&their_addr, &addr_size);
         if (new_fd != -1) {
             client_sockets.push_back(new_fd);
-            std::cout << "Player " << client_sockets.size() <<" ready to connect!"<< std::endl;
+            // std::cout << "Player " << client_sockets.size() <<" ready to connect!"<< std::endl;
+            std::cout << "Player " << i <<" ready to play"<< std::endl;
             string local_port = receive_info( new_fd);
             int local_port_str = stoi(local_port);
             client_ports.push_back(local_port_str);
@@ -46,42 +49,80 @@ void ringmaster::setup_server(Potato & potato) {
 
     
 
-    cout<<"print client_sockets"<<endl;
-    for (int i = 0; i < client_sockets.size(); i++) {
-        cout<<client_sockets[i]<<endl;
-        // string info = "hi palyer "<<i<<endl;
-        // send(client_sockets[i], info.c_str(), info.size(), 0)
-    }
+    // cout<<"print client_sockets"<<endl;
+    // for (int i = 0; i < client_sockets.size(); i++) {
+    //     cout<<client_sockets[i]<<endl;
+    // }
 
     get_info(client_sockets);
     send_info();
 
-    // cout<<"Now hops is: "<s
-
     srand((unsigned int)time(NULL)+1);
     int first_id = rand() % num_players;
-    // first_id = 0;
-    
-    // ssize_t bytes_sent0 = send(client_sockets[0], &potato, sizeof(potato), 0);
-    // ssize_t bytes_sent1 = send(client_sockets[1], &potato, sizeof(potato), 0);
-    // ssize_t bytes_sent2 = send(client_sockets[2], &potato, sizeof(potato), 0);
-    // ssize_t bytes_sent3 = send(client_sockets[3], &potato, sizeof(potato), 0);
-
-    cout<<"the first potato send to "<<first_id<<endl;
+    cout<<"Ready to start the game, sending potato to player "<<first_id<<endl;
     ssize_t bytes_sent = send(client_sockets[first_id], &potato, sizeof(potato), 0);
 
+    listen_player(num_players, potato);
+
     
 
-    // if (num_hops == 0) {
-    //     cout<<"now  hops is 0"<<endl;
-    //     for (int client_fd : client_sockets) {
-    //         close(client_fd); // 关闭客户端套接字
-    //     }
-    //     close(server_fd);
-        
-    // }
+    if (num_hops == 0) {
+        for (int client_fd : client_sockets) {
+            close(client_fd); // 关闭客户端套接字
+        }
+        close(server_fd);
+    }
 }
 
+void ringmaster::listen_player(int num_players, Potato & potato) {
+    std::vector<int> fds;
+    for (int i = 0; i < client_sockets.size(); i++) {
+        fds.push_back(client_sockets[i]);
+    }
+    
+    int maxFD = *max_element(fds.begin(), fds.end()); // 计算最大的文件描述符
+    // for (int i = 0; i < 3; i++) {
+    //     cout<<i<<": "<<fds[i]<<endl;
+    // }
+
+    int check = 1;
+    while (check == 1) {
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        for (int i = 0; i < client_sockets.size(); i++) {
+            FD_SET(fds[i], &readfds); // 为每个文件描述符设置readfds位
+        }
+
+        int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL); // 使用正确的maxFD
+
+        if ((activity < 0) && (errno != EINTR)) {
+            std::cerr << "Select error: " << strerror(errno) << std::endl;
+            break; // Exit or handle error
+        }
+
+        for (int fd : fds) {
+            if (FD_ISSET(fd, &readfds)) {
+                int revc_potato = recv(fd, &potato, sizeof(potato), 0);
+                cout<<"Trace of potato:"<<endl;
+                cout<<potato.record[0];
+                for (int i = 1; i < num_hops; i++) {
+                    cout<<","<<potato.record[i];
+                }
+                cout<<endl;
+                // receive_potato(fd, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
+                // 根据逻辑，可能需要在这里退出循环
+
+                check = 0;
+            }
+        }
+    }
+
+    // cout<<"send final potato"<<endl;
+    // cout<<"potato hops: "<<potato.hops<<endl;
+    for (int i = 0; i < num_players; i++) {
+        ssize_t bytes_sent_send_final = send(client_sockets[i], &potato, sizeof(potato), 0);
+    }
+}
 
 void ringmaster::send_info() {
     Potato test_p;
@@ -109,15 +150,17 @@ void ringmaster::send_info() {
                       " Right_Port: " + right_port_str + + "\n";
 
 
-        cout<<"print send mess here +++++++++++++++++"<<endl;
-        cout<<message<<endl;
-        cout<<"print send mess here +++++++++++++++++"<<endl;
+        // cout<<"print send mess here +++++++++++++++++"<<endl;
+        // cout<<message<<endl;
+        // cout<<"print send mess here +++++++++++++++++"<<endl;
 
 
         int len = message.length();
         ssize_t bytes_sent1 = send(client_sockets[i], &len, sizeof(len), 0);
 
         ssize_t bytes_sent = send(client_sockets[i], message.c_str(), len, 0);
+        
+         ssize_t bytes_sent_num_players = send(client_sockets[i], &num_players, sizeof(num_players), 0);
         
 
         // int send_test = 8273;
@@ -156,7 +199,7 @@ void ringmaster::get_info(vector<int> client_sockets) {
         getpeername(new_fd, (struct sockaddr *)&client_addr, &client_addr_size);
         std::string client_ip = inet_ntoa(client_addr.sin_addr);
         client_ips.push_back(client_ip);
-        cout<<"client_ip"<<client_ip<<endl;
+        // cout<<"client_ip"<<client_ip<<endl;
 
 
 
