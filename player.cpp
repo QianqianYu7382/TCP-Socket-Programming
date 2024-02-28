@@ -75,7 +75,7 @@ void player::print_info() {
 void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Potato &potato) {
     std::vector<int> fds = {ringMasterFD, leftPlayerFD, rightPlayerFD};
     
-    int maxFD = *max_element(fds.begin(), fds.end()); // 计算最大的文件描述符
+    int maxFD = *max_element(fds.begin(), fds.end()); 
     // for (int i = 0; i < 3; i++) {
     //     cout<<i<<": "<<fds[i]<<endl;
     // }
@@ -86,10 +86,10 @@ void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Pota
         fd_set readfds;
         FD_ZERO(&readfds);
         for (int i = 0; i < 3; i++) {
-            FD_SET(fds[i], &readfds); // 为每个文件描述符设置readfds位
+            FD_SET(fds[i], &readfds); 
         }
 
-        int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL); // 使用正确的maxFD
+        int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL); 
 
         if ((activity < 0) && (errno != EINTR)) {
             std::cerr << "Select error: " << strerror(errno) << std::endl;
@@ -111,7 +111,7 @@ void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Pota
                         potato.record[potato.idx] = player_id; 
                         potato.idx++;
                         send(ringMasterFD, &potato, sizeof(potato), 0);
-                        cout<<"I'am it!"<<endl;
+                        cout<<"I'm it"<<endl;
                         // cout<<"list________________"<<endl;
                         // for (int i = 0; i < 10; i++) {
                         //     cout<<potato.record[i]<<endl;
@@ -152,7 +152,7 @@ void player::listen3(int ringMasterFD, int leftPlayerFD, int rightPlayerFD, Pota
                 }
 
                 // receive_potato(fd, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-                // 根据逻辑，可能需要在这里退出循环
+                
             }
         }
     }

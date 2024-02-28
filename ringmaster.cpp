@@ -68,7 +68,7 @@ void ringmaster::setup_server(Potato & potato) {
 
     if (num_hops == 0) {
         for (int client_fd : client_sockets) {
-            close(client_fd); // 关闭客户端套接字
+            close(client_fd); 
         }
         close(server_fd);
     }
@@ -80,7 +80,7 @@ void ringmaster::listen_player(int num_players, Potato & potato) {
         fds.push_back(client_sockets[i]);
     }
     
-    int maxFD = *max_element(fds.begin(), fds.end()); // 计算最大的文件描述符
+    int maxFD = *max_element(fds.begin(), fds.end()); 
     // for (int i = 0; i < 3; i++) {
     //     cout<<i<<": "<<fds[i]<<endl;
     // }
@@ -90,10 +90,10 @@ void ringmaster::listen_player(int num_players, Potato & potato) {
         fd_set readfds;
         FD_ZERO(&readfds);
         for (int i = 0; i < client_sockets.size(); i++) {
-            FD_SET(fds[i], &readfds); // 为每个文件描述符设置readfds位
+            FD_SET(fds[i], &readfds); 
         }
 
-        int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL); // 使用正确的maxFD
+        int activity = select(maxFD + 1, &readfds, NULL, NULL, NULL); 
 
         if ((activity < 0) && (errno != EINTR)) {
             std::cerr << "Select error: " << strerror(errno) << std::endl;
@@ -110,7 +110,7 @@ void ringmaster::listen_player(int num_players, Potato & potato) {
                 }
                 cout<<endl;
                 // receive_potato(fd, leftPlayerFD, rightPlayerFD, ringMasterFD, potato);
-                // 根据逻辑，可能需要在这里退出循环
+                
 
                 check = 0;
             }
