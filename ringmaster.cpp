@@ -238,7 +238,7 @@ int main(int argc, char* argv[]) {
     potato.hops = num_hops;
     potato.idx = 0;
 
-    if (num_hops < 0 || num_players <= 0) {
+    if (num_hops < 0 || num_players <= 1) {
         cerr << "Error: Invalid number of players or hops.\n";
         return 1;
     }
