@@ -57,6 +57,15 @@ void ringmaster::setup_server(Potato & potato) {
     get_info(client_sockets);
     send_info();
 
+    if (num_hops == 0) {
+        cout<<"Trace of potato:"<<endl;
+        cout<<""<<endl;
+        for (int i = 0; i < num_players; i++) {
+            ssize_t bytes_sent_send_final = send(client_sockets[i], &potato, sizeof(potato), 0);
+        }
+        return;
+    }
+
     srand((unsigned int)time(NULL)+1);
     int first_id = rand() % num_players;
     cout<<"Ready to start the game, sending potato to player "<<first_id<<endl;
